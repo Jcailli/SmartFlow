@@ -6,17 +6,16 @@ use App\Repository\UTILISATEURSRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Security\Core\User\UserInterface;
+use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 
 #[ORM\Entity(repositoryClass: UTILISATEURSRepository::class)]
-class UTILISATEURS
+class UTILISATEURS implements UserInterface, PasswordAuthenticatedUserInterface
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
     private ?int $id = null;
-
-    #[ORM\Column(length: 255)]
-    private ?string $suggestion = null;
 
     #[ORM\Column(length: 255)]
     private ?string $email = null;
@@ -27,7 +26,7 @@ class UTILISATEURS
     #[ORM\Column]
     private ?\DateTime $date_creation = null;
 
-    #[ORM\Column]
+    #[ORM\Column(nullable: true)]
     private ?\DateTime $expiration_date = null;
 
     #[ORM\Column(length: 255, nullable: true)]
@@ -38,9 +37,6 @@ class UTILISATEURS
 
     #[ORM\OneToOne(mappedBy: 'user_id', cascade: ['persist', 'remove'])]
     private ?PREFERENCES $preferences = null;
-
-    #[ORM\ManyToOne(inversedBy: 'utilisateur_id')]
-    private ?RECOMMANDATIONSIA $recommandations = null;
 
     /**
      * @var Collection<int, TACHES>
@@ -54,27 +50,22 @@ class UTILISATEURS
     #[ORM\OneToMany(targetEntity: HABITUDESNAVIGATION::class, mappedBy: 'utilisateur')]
     private Collection $habitudesNavigations;
 
+    /**
+     * @var Collection<int, RECOMMANDATIONSIA>
+     */
+    #[ORM\OneToMany(mappedBy: 'utilisateur', targetEntity: RECOMMANDATIONSIA::class)]
+    private Collection $recommandations;
+
     public function __construct()
     {
         $this->taches = new ArrayCollection();
         $this->habitudesNavigations = new ArrayCollection();
+        $this->recommandations = new ArrayCollection();
     }
 
     public function getId(): ?int
     {
         return $this->id;
-    }
-
-    public function getSuggestion(): ?string
-    {
-        return $this->suggestion;
-    }
-
-    public function setSuggestion(string $suggestion): static
-    {
-        $this->suggestion = $suggestion;
-
-        return $this;
     }
 
     public function getEmail(): ?string
@@ -171,18 +162,6 @@ class UTILISATEURS
         return $this;
     }
 
-    public function getRecommandations(): ?RECOMMANDATIONSIA
-    {
-        return $this->recommandations;
-    }
-
-    public function setRecommandations(?RECOMMANDATIONSIA $recommandations): static
-    {
-        $this->recommandations = $recommandations;
-
-        return $this;
-    }
-
     /**
      * @return Collection<int, TACHES>
      */
@@ -241,5 +220,55 @@ class UTILISATEURS
         }
 
         return $this;
+    }
+
+    /**
+     * @return Collection<int, RECOMMANDATIONSIA>
+     */
+    public function getRecommandations(): Collection
+    {
+        return $this->recommandations;
+    }
+
+    public function addRecommandation(RECOMMANDATIONSIA $recommandation): static
+    {
+        if (!$this->recommandations->contains($recommandation)) {
+            $this->recommandations->add($recommandation);
+            $recommandation->setUtilisateur($this);
+        }
+
+        return $this;
+    }
+
+    public function removeRecommandation(RECOMMANDATIONSIA $recommandation): static
+    {
+        if ($this->recommandations->removeElement($recommandation)) {
+            // set the owning side to null (unless already changed)
+            if ($recommandation->getUtilisateur() === $this) {
+                $recommandation->setUtilisateur(null);
+            }
+        }
+
+        return $this;
+    }
+
+    public function getRoles(): array
+    {
+        return ['ROLE_USER'];
+    }
+
+    public function eraseCredentials()
+    {
+        // Si tu stockes des données temporaires sensibles, nettoie-les ici
+    }
+
+    public function getPassword(): ?string
+    {
+        return $this->getMotDePasse();
+    }
+
+    public function getUserIdentifier(): string
+    {
+        return $this->getEmail();
     }
 }

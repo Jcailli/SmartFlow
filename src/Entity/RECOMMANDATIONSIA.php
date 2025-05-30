@@ -16,11 +16,8 @@ class RECOMMANDATIONSIA
     #[ORM\Column]
     private ?int $id = null;
 
-    /**
-     * @var Collection<int, UTILISATEURS>
-     */
-    #[ORM\OneToMany(targetEntity: UTILISATEURS::class, mappedBy: 'recommandations')]
-    private Collection $utilisateur_id;
+    #[ORM\ManyToOne(targetEntity: UTILISATEURS::class, inversedBy: 'recommandations')]
+    private ?UTILISATEURS $utilisateur = null;
 
     #[ORM\Column(type: Types::TEXT)]
     private ?string $suggestion = null;
@@ -36,7 +33,7 @@ class RECOMMANDATIONSIA
 
     public function __construct()
     {
-        $this->utilisateur_id = new ArrayCollection();
+        // $this->utilisateur_id = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -44,33 +41,14 @@ class RECOMMANDATIONSIA
         return $this->id;
     }
 
-    /**
-     * @return Collection<int, UTILISATEURS>
-     */
-    public function getUtilisateurId(): Collection
+    public function getUtilisateur(): ?UTILISATEURS
     {
-        return $this->utilisateur_id;
+        return $this->utilisateur;
     }
 
-    public function addUtilisateurId(UTILISATEURS $utilisateurId): static
+    public function setUtilisateur(?UTILISATEURS $utilisateur): static
     {
-        if (!$this->utilisateur_id->contains($utilisateurId)) {
-            $this->utilisateur_id->add($utilisateurId);
-            $utilisateurId->setRecommandations($this);
-        }
-
-        return $this;
-    }
-
-    public function removeUtilisateurId(UTILISATEURS $utilisateurId): static
-    {
-        if ($this->utilisateur_id->removeElement($utilisateurId)) {
-            // set the owning side to null (unless already changed)
-            if ($utilisateurId->getRecommandations() === $this) {
-                $utilisateurId->setRecommandations(null);
-            }
-        }
-
+        $this->utilisateur = $utilisateur;
         return $this;
     }
 
